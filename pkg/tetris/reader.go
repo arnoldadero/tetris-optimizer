@@ -4,21 +4,20 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
 )
 
-// ReadTetrominoFile reads a file containing tetromino shapes and returns a slice of strings,
-// where each string represents a tetromino shape.
-func ReadTetrominoFile(filePath string) ([]string, error) {
+// ReadTetrominoFile reads a file containing tetromino shapes and returns a slice of Tetromino structs.
+func ReadTetrominoFile(filePath string) ([]Tetromino, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %w", err)
 	}
 	defer file.Close()
 
-	var tetrominoes []string
-	var currentTetromino strings.Builder
+	var tetrominoes []Tetromino
+	var currentTetrominoLines []string
 	lineCount := 0
+	tetrominoCount := 0
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -26,21 +25,33 @@ func ReadTetrominoFile(filePath string) ([]string, error) {
 		lineCount++
 
 		if line == "" {
-			if currentTetromino.Len() > 0 {
-				tetrominoes = append(tetrominoes, currentTetromino.String())
-				currentTetromino.Reset()
+			if len(currentTetrominoLines) > 0 {
+				tetromino, err := parseTetromino(currentTetrominoLines)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing tetromino at lines %d-%d: %w", lineCount-len(currentTetrominoLines), lineCount, err)
+				}
+				tetromino.Letter = rune('A' + tetrominoCount)
+				tetrominoes = append(tetrominoes, tetromino)
+				tetrominoCount++
+				currentTetrominoLines = []string{}
 			}
 		} else {
 			if len(line) != 4 {
 				return nil, fmt.Errorf("invalid tetromino format at line %d: line length must be 4", lineCount)
 			}
-			currentTetromino.WriteString(line)
-			currentTetromino.WriteString("\n")
+			currentTetrominoLines = append(currentTetrominoLines, line)
 		}
 
-		if lineCount%5 == 0 && currentTetromino.Len() > 0 {
-			tetrominoes = append(tetrominoes, currentTetromino.String())
-			currentTetromino.Reset()
+		// Automatically finalize tetromino after 4 lines
+		if len(currentTetrominoLines) == 4 {
+			tetromino, err := parseTetromino(currentTetrominoLines)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing tetromino at lines %d-%d: %w", lineCount-3, lineCount, err)
+			}
+			tetromino.Letter = rune('A' + tetrominoCount)
+			tetrominoes = append(tetrominoes, tetromino)
+			tetrominoCount++
+			currentTetrominoLines = []string{}
 		}
 	}
 
@@ -48,9 +59,46 @@ func ReadTetrominoFile(filePath string) ([]string, error) {
 		return nil, fmt.Errorf("error reading file: %w", err)
 	}
 
-	if currentTetromino.Len() > 0 {
-		tetrominoes = append(tetrominoes, currentTetromino.String())
+	// Handle any remaining tetromino
+	if len(currentTetrominoLines) > 0 {
+		if len(currentTetrominoLines) != 4 {
+			return nil, fmt.Errorf("incomplete tetromino at end of file")
+		}
+		tetromino, err := parseTetromino(currentTetrominoLines)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing tetromino at end of file: %w", err)
+		}
+		tetromino.Letter = rune('A' + tetrominoCount)
+		tetrominoes = append(tetrominoes, tetromino)
 	}
 
 	return tetrominoes, nil
+}
+
+// parseTetromino converts tetromino lines into a Tetromino struct.
+func parseTetromino(lines []string) (Tetromino, error) {
+	var blocks []Block
+	for y, line := range lines {
+		for x, char := range line {
+			if char == '#' {
+				blocks = append(blocks, Block{X: x, Y: y})
+			} else if char != '.' {
+				return Tetromino{}, fmt.Errorf("invalid character '%c' in tetromino", char)
+			}
+		}
+	}
+	if len(blocks) != 4 {
+		return Tetromino{}, fmt.Errorf("invalid number of blocks: expected 4, got %d", len(blocks))
+	}
+
+	tetromino := Tetromino{
+		Blocks: blocks,
+	}
+
+	// Validate tetromino shape
+	if err := tetromino.Validate(); err != nil {
+		return Tetromino{}, err
+	}
+
+	return tetromino, nil
 }
