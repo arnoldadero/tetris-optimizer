@@ -1,7 +1,6 @@
 package test
 
 import (
-	
 	"os"
 	"testing"
 
@@ -12,41 +11,56 @@ func TestReadTetrominoFile(t *testing.T) {
 	tests := []struct {
 		name        string
 		content     string
-		expected    []string
+		expected    []tetris.Tetromino
 		expectError bool
 	}{
 		{
 			name: "Valid single tetromino",
-			content: "####\n" +
-				"#...\n" +
-				"#...\n" +
-				"#...\n",
-			expected: []string{
-				"####\n#...\n#...\n#...\n",
+			content: "####\n" + // 4 blocks in the first line
+			         "....\n" +
+			         "....\n" +
+			         "....\n",
+			expected: []tetris.Tetromino{
+				{
+					Blocks: []tetris.Block{
+						{X: 0, Y: 0}, {X: 1, Y: 0}, {X: 2, Y: 0}, {X: 3, Y: 0},
+					},
+					Letter: 'A',
+				},
 			},
 			expectError: false,
 		},
 		{
 			name: "Valid multiple tetrominoes",
 			content: "####\n" +
-				"#...\n" +
-				"#...\n" +
-				"#...\n" +
+				"....\n" +
+				"....\n" +
+				"....\n" +
 				"\n" +
-				"..#.\n" +
-				"..#.\n" +
-				"..#.\n" +
-				"..#.\n",
-			expected: []string{
-				"####\n#...\n#...\n#...\n",
-				"..#.\n..#.\n..#.\n..#.\n",
+				"##..\n" +  // Changed from "..#." to "##.."
+				"##..\n" +  // Changed from "..#." to "##.."
+				"....\n" +  // Changed from "..#." to "...."
+				"....\n",   // Changed from "..#." to "...."
+			expected: []tetris.Tetromino{
+				{
+					Blocks: []tetris.Block{
+						{X: 0, Y: 0}, {X: 1, Y: 0}, {X: 2, Y: 0}, {X: 3, Y: 0},
+					},
+					Letter: 'A',
+				},
+				{
+					Blocks: []tetris.Block{
+						{X: 0, Y: 0}, {X: 1, Y: 0}, {X: 0, Y: 1}, {X: 1, Y: 1},  // Updated to match the new shape
+					},
+					Letter: 'B',
+				},
 			},
 			expectError: false,
 		},
 		{
 			name:        "Empty file",
 			content:     "",
-			expected:    []string{},
+			expected:    []tetris.Tetromino{},
 			expectError: false,
 		},
 		{
@@ -55,6 +69,32 @@ func TestReadTetrominoFile(t *testing.T) {
 				"#...\n" +
 				"#...\n" +
 				"#...\n",
+			expected:    nil,
+			expectError: true,
+		},
+		{
+			name: "Invalid character in tetromino",
+			content: "####\n" +
+				"#..*\n" + // '*' is invalid
+				"#...\n" +
+				"#...\n",
+			expected:    nil,
+			expectError: true,
+		},
+		{
+			name: "Incorrect number of blocks",
+			content: "####\n" +
+				"#...\n" +
+				"#...\n" +
+				"#..#\n", // 5 blocks
+			expected:    nil,
+			expectError: true,
+		},
+		{
+			name: "Incomplete tetromino at end of file",
+			content: "####\n" +
+				"#...\n" +
+				"#...\n", // Only 3 lines
 			expected:    nil,
 			expectError: true,
 		},
@@ -89,8 +129,12 @@ func TestReadTetrominoFile(t *testing.T) {
 					t.Errorf("Expected %d tetrominoes, got %d", len(tt.expected), len(result))
 				}
 				for i, tetromino := range result {
-					if tetromino != tt.expected[i] {
-						t.Errorf("Tetromino %d mismatch.\nExpected:\n%s\nGot:\n%s", i+1, tt.expected[i], tetromino)
+					expectedTetromino := tt.expected[i]
+					if tetromino.Letter != expectedTetromino.Letter {
+						t.Errorf("Tetromino %d: expected letter %c, got %c", i+1, expectedTetromino.Letter, tetromino.Letter)
+					}
+					if !tetris.CompareBlockSlices(tetromino.Blocks, expectedTetromino.Blocks) {
+						t.Errorf("Tetromino %d blocks mismatch.\nExpected:\n%v\nGot:\n%v", i+1, expectedTetromino.Blocks, tetromino.Blocks)
 					}
 				}
 			}

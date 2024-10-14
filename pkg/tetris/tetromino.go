@@ -98,7 +98,7 @@ func NormalizeBlocks(blocks []Block) []Block {
 	}
 	normalized := make([]Block, len(blocks))
 	for i, b := range blocks {
-		normalized[i] = Block{b.X - minX, b.Y - minY}
+		normalized[i] = Block{X: b.X - minX, Y: b.Y - minY}
 	}
 	return normalized
 }
