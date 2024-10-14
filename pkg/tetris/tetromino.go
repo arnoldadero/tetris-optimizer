@@ -2,6 +2,8 @@ package tetris
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 )
 
 // Block represents a single block in the tetromino.
@@ -106,12 +108,14 @@ func CompareBlockSlices(a, b []Block) bool {
 	if len(a) != len(b) {
 		return false
 	}
-	blockMap := make(map[Block]bool)
+	blockMap := make(map[string]bool)
 	for _, block := range a {
-		blockMap[block] = true
+		key := fmt.Sprintf("%d,%d", block.X, block.Y)
+		blockMap[key] = true
 	}
 	for _, block := range b {
-		if !blockMap[block] {
+		key := fmt.Sprintf("%d,%d", block.X, block.Y)
+		if !blockMap[key] {
 			return false
 		}
 	}
@@ -125,4 +129,38 @@ func (t *Tetromino) Rotate() {
 	}
 	t.Rotation = (t.Rotation + 90) % 360
 	t.Blocks = NormalizeBlocks(t.Blocks)
+}
+
+// TetrominoToString returns a string representation of the tetromino.
+func TetrominoToString(t Tetromino) string {
+	// Determine the size of the grid
+	maxX, maxY := 0, 0
+	for _, block := range t.Blocks {
+		if block.X > maxX {
+			maxX = block.X
+		}
+		if block.Y > maxY {
+			maxY = block.Y
+		}
+	}
+
+	grid := make([][]rune, maxY+1)
+	for i := range grid {
+		grid[i] = make([]rune, maxX+1)
+		for j := range grid[i] {
+			grid[i][j] = '.'
+		}
+	}
+
+	for _, block := range t.Blocks {
+		grid[block.Y][block.X] = t.Letter
+	}
+
+	var sb strings.Builder
+	for _, row := range grid {
+		sb.WriteString(string(row))
+		sb.WriteString("\n")
+	}
+
+	return sb.String()
 }
