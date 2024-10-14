@@ -22,7 +22,7 @@ func main() {
 	}
 
 	fmt.Printf("Successfully read %d tetrominoes:\n", len(tetrominoes))
-	for i, tetromino := range tetrominoes {
-		fmt.Printf("Tetromino %d:\n%s\n", i+1, tetromino)
+	for _, tetromino := range tetrominoes {
+		fmt.Printf("Tetromino %c:\n%s\n", tetromino.Letter, tetris.TetrominoToString(tetromino))
 	}
 }
