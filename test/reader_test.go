@@ -1,8 +1,11 @@
-package tetris
+package test
 
 import (
+	
 	"os"
 	"testing"
+
+	"github.com/arnoldadero/tetris-optimizer/pkg/tetris"
 )
 
 func TestReadTetrominoFile(t *testing.T) {
@@ -27,8 +30,8 @@ func TestReadTetrominoFile(t *testing.T) {
 			name: "Valid multiple tetrominoes",
 			content: "####\n" +
 				"#...\n" +
-			"#...\n" +
-			"#...\n" +
+				"#...\n" +
+				"#...\n" +
 				"\n" +
 				"..#.\n" +
 				"..#.\n" +
@@ -72,7 +75,7 @@ func TestReadTetrominoFile(t *testing.T) {
 			tmpFile.Close()
 
 			// Call the function under test
-			result, err := ReadTetrominoFile(tmpFile.Name())
+			result, err := tetris.ReadTetrominoFile(tmpFile.Name())
 
 			if tt.expectError {
 				if err == nil {
