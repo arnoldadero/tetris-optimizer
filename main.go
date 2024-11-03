@@ -7,7 +7,8 @@ import (
 
 func main() {
 	if len(os.Args) != 2 {
-		fmt.Println("ERROR")
+		fmt.Println("Usage: go run . <input_file.txt>")
+		fmt.Println("ERROR: Invalid number of arguments")
 		return
 	}
 
